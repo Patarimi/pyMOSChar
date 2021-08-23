@@ -56,9 +56,9 @@ def init(**settings):
             print("Please call init() again with a valid model file")
             return None
     
-    vgs = np.linspace(0, vgsMax, vgsMax/vgsStep + 1)
-    vds = np.linspace(0, vdsMax, vdsMax/vdsStep + 1)
-    vsb = np.linspace(0, vsbMax, vsbMax/vsbStep + 1)
+    vgs = np.linspace(0, vgsMax, round(vgsMax/vgsStep+1))
+    vds = np.linspace(0, vdsMax, round(vdsMax/vdsStep+1))
+    vsb = np.linspace(0, vsbMax, round(vsbMax/vsbStep+1))
 
     mosDat['pfet'] = {}
     mosDat['nfet'] = {}
@@ -229,8 +229,8 @@ def genNetlistSpectre(fName='charMOS.scs'):
     netlist.write('vgsp     (vgp 0)         vsource dc=-mosChar_gs \n')
     netlist.write('vbsp     (vbp 0)         vsource dc=mosChar_sb  \n')
     netlist.write('\n')
-    netlist.write('mn (vdn vgn 0 vbn) {0} l=length*1e-6 w={1}e-6 multi=1 nf={2} _ccoflag=1\n'.format(modelN, width, numfing))
-    netlist.write('mp (vdp vgp 0 vbp) {0} l=length*1e-6 w={1}e-6 multi=1 nf={2} _ccoflag=1\n'.format(modelP, width, numfing))
+    netlist.write('mn (vdn vgn 0 vbn) {0} l=length*1e-6 w={1}e-6 mult=1 nfing={2}\n'.format(modelN, width, numfing))
+    netlist.write('mp (vdp vgp 0 vbp) {0} l=length*1e-6 w={1}e-6 mult=1 nfing={2}\n'.format(modelP, width, numfing))
     netlist.write('\n')
     netlist.write('options1 options gmin=1e-13 dc_pivot_check=yes reltol=1e-4 vabstol=1e-6 iabstol=1e-10 temp=27 tnom=27 rawfmt=nutbin rawfile="./charMOS.raw" save=none\n')
     netlist.write('sweepvds sweep param=mosChar_ds start=0 stop={0} step={1} {{ \n'.format(vdsMax, vdsStep))
@@ -261,7 +261,7 @@ def genDB():
     elif (simulator == "spectre"):
         genNetlistSpectre()
     else:
-        print "ERROR: Invalid/Unsupported simulator specified"
+        print("ERROR: Invalid/Unsupported simulator specified")
         sys.exit(0)
 
     progTotal = len(mosLengths)*len(vsb)

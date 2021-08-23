@@ -7,7 +7,7 @@ def split(plotDat):
     """ Converts each of the arrays in plotDat into 2-D arrays
     where the first index corresponds to the parameter being swept.
     """
-    sweep = plotDat[plotDat.keys()[0]]
+    sweep = plotDat[list(plotDat.keys())[0]]
     splitPos = np.argwhere(sweep == sweep[0])
     nSplits = len(splitPos)
     
@@ -18,7 +18,7 @@ def split(plotDat):
     splitPos = np.append(splitPos, len(sweep))
 
     for key in keys:
-        plotDatSplit[key] = np.zeros((nSplits, len(plotDat[key])/ nSplits))
+        plotDatSplit[key] = np.zeros((nSplits, int(len(plotDat[key])/ nSplits)))
         for splitPtr in range(nSplits):
             plotDatSplit[key][splitPtr] = plotDat[key][splitPos[splitPtr]:splitPos[splitPtr + 1]]
     
@@ -34,9 +34,8 @@ def read(fileName, simulator="ngspice"):
     """
     rawFile = open(fileName, 'rb')
     dataBytes = rawFile.read()
-    dataStr = str(dataBytes)
     
-    simStarts = [m.start() for m in re.finditer('Title', dataStr)]
+    simStarts = [m.start() for m in re.finditer(b'Title', dataBytes)]
     
     plotDat = collections.OrderedDict()
     
@@ -46,39 +45,38 @@ def read(fileName, simulator="ngspice"):
         
         if flags == 'real':
         
+            startNoVar = dataBytes.find(b'No. Variables: ', startPtr)
+            startNoPts = dataBytes.find(b'No. Points:', startNoVar)
+            startVar = dataBytes.find(b'Variables:', startNoPts)
+            startBin = dataBytes.find(b'Binary:\n', startVar)
             # Extract the number of variables
-            startPos = dataBytes.find(b'No. Variables: ', startPtr) + len('No. Variables: ')
-            endPos = dataBytes.find(b'No. Points:', startPtr)
-            numVars = int(dataBytes[startPos:endPos].decode())
+            numVars = int(dataBytes[startNoVar+len('No. Variables: '):startNoPts].decode())
             
             #Extract the number of points
-            startPos = endPos + len('No. Points: ')
-            endPos = dataBytes.find(b'Variables:', startPos)
-            numPoints = int(dataBytes[startPos:endPos].decode())
+            numPoints = int(dataBytes[startNoPts+len('No. Points: '):startVar].decode())
             
             #Extract variable names
-            tmpPos = dataBytes.find(b'Variables:')
-            startPos = dataBytes.find(b'Variables:', tmpPos + len('Variables')) + len('Variables:')
-            endPos = dataBytes.find(b'Binary:\n')
-            varData = str(dataBytes[startPos:endPos]).replace('\t', ' ').strip()
-            varLines = varData.split('\n')
-            varList = [line.strip().split()[1] for line in varLines]
+            varData = dataBytes[startVar+len('Variables:'):startBin].replace(b'\t', b' ').strip()
+            varLines = varData.split(b'\n')
+            varList = [line.strip().split()[1].decode() for line in varLines]
             
             if (simulator == "ngspice"):
                 # Create arrays to store the points
                 for j in range(numVars):
                     plotDat[varList[j]] = np.zeros(numPoints)
                 # Populate the arrays
-                bytePtr = endPos + len('Binary:\n')
+                bytePtr = startBin + len('Binary:\n')
                 for j in range(numPoints):
                     for k in plotDat.keys():
                         plotDat[k][j] = struct.unpack('d', dataBytes[bytePtr:bytePtr+8])[0]
                         bytePtr += 8
                         
             elif (simulator == "spectre"):
-                headerEnds = [m.start() for m in re.finditer('Binary:\n', dataStr)]
+                headerEnds = [m.start() for m in re.finditer(b'Binary:\n', dataBytes)]
+                # Create arrays to store the points
                 for j in range(numVars):
                     plotDat[varList[j]] = np.zeros(numPoints*len(headerEnds))
+                # Populate the arrays
                 sweepIter = 0
                 for endPos in headerEnds:
                     bytePtr = endPos + len('Binary:\n')
