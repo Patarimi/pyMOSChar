@@ -7,9 +7,9 @@ mosDat = None
 def init(fileName='MOS.dat'):
     global mosDat
     
-    print "Loading MOSFET data. Please wait..."
+    print("Loading MOSFET data. Please wait...")
     mosDat = pickle.load(open(fileName, 'rb'))
-    print "Loading complete!"
+    print("Loading complete!")
 
 def reset():
     global mosDat
@@ -49,10 +49,10 @@ def lookup(mosType, *outVars, **inVars):
                     outVarList.append(outVar[pos])
                     outVarList.append(outVar[pos+1:].lower())
                 else:
-                    print "ERROR: Outputs requested must be a ratio or product of variables"
+                    print("ERROR: Outputs requested must be a ratio or product of variables")
                     return None
             else:
-                print "ERROR: Output variables must be strings!"
+                print("ERROR: Output variables must be strings!")
                 return None
     elif (len(outVars) == 1):
         outVar = outVars[0]
@@ -73,10 +73,10 @@ def lookup(mosType, *outVars, **inVars):
                     outVarList.append(outVar[pos])
                     outVarList.append(outVar[pos+1:].lower())
         else:
-            print "ERROR: Output variables must be strings!"
+            print("ERROR: Output variables must be strings!")
             return None
     else:
-        print "ERROR: No output variables specified"
+        print("ERROR: No output variables specified")
         return None
     
     # Figure out the input arguments. Set to default those not specified.
@@ -84,10 +84,10 @@ def lookup(mosType, *outVars, **inVars):
 
     for varName in varNames:
         if (not varName.islower()):
-            print "ERROR: Keyword args must be lower case. Allowed arguments: l, vgs, cds and vsb."
+            print("ERROR: Keyword args must be lower case. Allowed arguments: l, vgs, cds and vsb.")
             return None
         if (varName not in ['l', 'vgs', 'vds', 'vsb']):
-            print "ERROR: Invalid keyword arg(s). Allowed arguments: l, vgs, cds and vsb."
+            print("ERROR: Invalid keyword arg(s). Allowed arguments: l, vgs, cds and vsb.")
             return None
 
     L = defaultL
@@ -123,7 +123,7 @@ def lookup(mosType, *outVars, **inVars):
     
     xi_mesh = np.array(np.meshgrid(L, VSB, VDS, VGS))
     xi = np.rollaxis(xi_mesh, 0, 5)
-    xi = xi.reshape(xi_mesh.size/4, 4)
+    xi = xi.reshape(round(xi_mesh.size/4), 4)
 
     len_L = len(L) if type(L) == np.ndarray or type(L) == list else 1
     len_VGS = len(VGS) if type(VGS) == np.ndarray or type(VGS) == list else 1
@@ -133,7 +133,7 @@ def lookup(mosType, *outVars, **inVars):
     if (mode == 1 or mode == 2):
         result = np.squeeze(interpn(points, ydata, xi).reshape(len_L, len_VSB, len_VDS, len_VGS))
     elif (mode == 3):
-        print "ERROR: Mode 3 not supported yet :-("
+        print("ERROR: Mode 3 not supported yet :-(")
 
     # Return the result
     return result
